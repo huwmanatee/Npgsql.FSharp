@@ -26,7 +26,7 @@ type Sql() =
     static member stringOrNone(value: string option) = Utils.sqlMap value Sql.string
     static member text(value: string) = SqlValue.String value
     static member textOrNone(value: string option) = Sql.stringOrNone value
-    static member jsonb(value: string) = SqlValue.Jsonb value 
+    static member jsonb(value: string) = SqlValue.Jsonb value
     static member jsonbOrNone(value: string option) = Utils.sqlMap value Sql.jsonb
     static member bit(value: bool) = SqlValue.Bit value
     static member bitOrNone(value: bool option) = Utils.sqlMap value Sql.bit
@@ -60,8 +60,8 @@ type Sql() =
     static member intArrayOrNone(value: int[] option) = Utils.sqlMap value Sql.intArray
     static member dbnull = SqlValue.Null
     static member parameter(genericParameter: NpgsqlParameter) = SqlValue.Parameter genericParameter
-     
-/// Specifies how to manage SSL. 
+
+/// Specifies how to manage SSL.
 [<RequireQualifiedAccess>]
 type SslMode =
     /// SSL is disabled. If the server requires SSL, the connection will fail.
@@ -502,14 +502,14 @@ module Sql =
 
     let private populateRow (cmd: NpgsqlCommand) (row: (string * SqlValue) list) =
         for (paramName, value) in row do
-            
+
             let normalizedParameterName =
                 let paramName = paramName.Trim()
                 if not (paramName.StartsWith "@")
                 then sprintf "@%s" paramName
                 else paramName
 
-            let add value valueType = 
+            let add value valueType =
                 cmd.Parameters.AddWithValue(normalizedParameterName, valueType, value)
                 |> ignore
 
@@ -535,7 +535,7 @@ module Sql =
             | SqlValue.Time x -> add x NpgsqlDbType.Time
             | SqlValue.StringArray x -> add x (NpgsqlDbType.Array ||| NpgsqlDbType.Text)
             | SqlValue.IntArray x -> add x (NpgsqlDbType.Array ||| NpgsqlDbType.Integer)
-            | SqlValue.Parameter x -> cmd.Parameters.AddWithValue(normalizedParameterName, x) |> ignore
+            | SqlValue.Parameter x -> cmd.Parameters.Add(x) |> ignore
 
     let private populateCmd (cmd: NpgsqlCommand) (props: SqlProps) =
         if props.IsFunction then cmd.CommandType <- CommandType.StoredProcedure
@@ -666,7 +666,7 @@ module Sql =
                 use reader = command.ExecuteReader()
                 let postgresReader = unbox<NpgsqlDataReader> reader
                 let rowReader = RowReader(postgresReader)
-                if reader.Read() 
+                if reader.Read()
                 then Ok (read rowReader)
                 else failwith "Expected at least one row to be returned from the result set. Instead it was empty"
             finally
@@ -745,7 +745,7 @@ module Sql =
                     use! reader = Async.AwaitTask (command.ExecuteReaderAsync(mergedToken))
                     let postgresReader = unbox<NpgsqlDataReader> reader
                     let rowReader = RowReader(postgresReader)
-                    if reader.Read() 
+                    if reader.Read()
                     then return Ok (read rowReader)
                     else return! failwith "Expected at least one row to be returned from the result set. Instead it was empty"
                 finally
